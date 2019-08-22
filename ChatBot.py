@@ -92,11 +92,11 @@ class Voc:
         self.index2word = {PAD_token: "PAD", SOS_token: "SOS", EOS_token: "EOS"}
         self.num_words = 3
 
-    def addSentence(self, sentence):
+    def addS(self, sentence):
         for word in sentence.split(' '):
-            self.addWord(word)
+            self.addW(word)
 
-    def addWord(self, word):
+    def addW(self, word):
         if word not in self.word2index:
             self.word2index[word] = self.num_words
             self.word2count[word] = 1
@@ -126,19 +126,19 @@ class Voc:
         self.num_words = 3
 
         for word in keep_words:
-            self.addWord(word)
+            self.addW(word)
 
 
 MAX_LENGTH = 10
 
-def unicodeToAscii(s):
+def unicodeChange(s):
     return ''.join(
         c for c in unicodedata.normalize('NFD', s)
         if unicodedata.category(c) != 'Mn'
     )
 
-def normalizeString(s):
-    s = unicodeToAscii(s.lower().strip())
+def normalizeS(s):
+    s = unicodeChange(s.lower().strip())
     s = re.sub(r"([.!?])", r" \1", s)
     s = re.sub(r"[^a-zA-Z.!?]+", r" ", s)
     s = re.sub(r"\s+", r" ", s).strip()
@@ -148,36 +148,30 @@ def readVocs(datafile, corpus_name):
     print("Reading lines...")
     lines = open(datafile, encoding='utf-8').\
         read().strip().split('\n')
-    pairs = [[normalizeString(s) for s in l.split('\t')] for l in lines]
+    pairs = [[normalizeS(s) for s in l.split('\t')] for l in lines]
     voc = Voc(corpus_name)
     return voc, pairs
 
 def filterPair(p):
     return len(p[0].split(' ')) < MAX_LENGTH and len(p[1].split(' ')) < MAX_LENGTH
 
-def filterPairs(pairs):
+def filterPair2(pairs):
     return [pair for pair in pairs if filterPair(pair)]
 
-def loadPrepareData(corpus, corpus_name, datafile, save_dir):
+def loadPreparedData(corpus, corpus_name, datafile, save_dir):
     print("Start preparing training data ...")
     voc, pairs = readVocs(datafile, corpus_name)
     print("Read {!s} sentence pairs".format(len(pairs)))
-    pairs = filterPairs(pairs)
+    pairs = filterPair2(pairs)
     print("Trimmed to {!s} sentence pairs".format(len(pairs)))
     print("Counting words...")
     for pair in pairs:
-        voc.addSentence(pair[0])
-        voc.addSentence(pair[1])
+        voc.addS(pair[0])
+        voc.addS(pair[1])
     print("Counted words:", voc.num_words)
     return voc, pairs
-
-
 save_dir = os.path.join("data", "save")
-voc, pairs = loadPrepareData(corpus, corpus_name, datafile, save_dir)
-
-#for pair in pairs[:10]:
- #   print(pair)
-
+voc, pairs = loadPreparedData(corpus, corpus_name, datafile, save_dir)
 
 MIN_COUNT = 3
 
@@ -470,7 +464,7 @@ def evaluateInput(encoder, decoder, searcher, voc):
         try:
             input_sentence = input('> ')
             if input_sentence == 'q' or input_sentence == 'quit': break
-            input_sentence = normalizeString(input_sentence)
+            input_sentence = normalizeS(input_sentence)
             output_words = evaluate(encoder, decoder, searcher, voc, input_sentence)
             output_words[:] = [x for x in output_words if not (x == 'EOS' or x == 'PAD')]
             print('Bot:', ' '.join(output_words))
@@ -488,7 +482,6 @@ dropout = 0.1
 batch_size = 64
 loadFilename = None
 checkpoint_iter = 4000
-#loadFilename = os.path.join(save_dir, model_name, corpus_name, '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size), '{}_checkpoint.tar'.format(checkpoint_iter))
 if loadFilename:
     checkpoint = torch.load(loadFilename)
     encoder_sd = checkpoint['en']
