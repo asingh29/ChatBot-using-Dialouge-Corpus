@@ -83,6 +83,7 @@ PAD_token = 0
 SOS_token = 1
 EOS_token = 2
 
+
 class Voc:
     def __init__(self, name):
         self.name = name
@@ -493,16 +494,10 @@ if loadFilename:
 
 
 embedding = nn.Embedding(voc.num_words, hidden_size)
-if loadFilename:
-    embedding.load_state_dict(embedding_sd)
 encoder = EncoderRNN(hidden_size, embedding, encoder_n_layers, dropout)
 decoder = LuongAttnDecoderRNN(attn_model, embedding, hidden_size, voc.num_words, decoder_n_layers, dropout)
-if loadFilename:
-    encoder.load_state_dict(encoder_sd)
-    decoder.load_state_dict(decoder_sd)
 encoder = encoder.to(device)
 decoder = decoder.to(device)
-print('Models built and ready to go')
 
 clip = 50.0
 teacher_forcing_ratio = 1.0
@@ -518,9 +513,6 @@ decoder.train()
 print('Building optimizers')
 encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
 decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate * decoder_learning_ratio)
-if loadFilename:
-    encoder_optimizer.load_state_dict(encoder_optimizer_sd)
-    decoder_optimizer.load_state_dict(decoder_optimizer_sd)
 
 for state in encoder_optimizer.state.values():
     for k, v in state.items():
